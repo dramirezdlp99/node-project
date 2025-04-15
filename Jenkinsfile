@@ -12,7 +12,7 @@ pipeline {
     }
     stage('Tool Install') {
       steps {
-       tool name: 'Node 20', type: 'nodejs'
+        tool name: 'Node 20', type: 'nodejs'
       }
     }
     stage('Clean workspace') {
@@ -38,6 +38,12 @@ pipeline {
     stage('Build app') {
       steps {
         bat 'npm run build'
+      }
+    }
+    // 👇 Aquí viene el stage que te faltaba
+    stage('Deploy to Vercel') {
+      steps {
+        bat "npx vercel --prod --token=%VERCEL_TOKEN%"
       }
     }
   }
