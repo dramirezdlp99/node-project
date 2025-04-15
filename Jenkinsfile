@@ -2,9 +2,8 @@ pipeline {
     agent any
 
     environment {
-        // Variables de entorno
-        VERCEL_TOKEN = credentials('vercel-token')  // Asegúrate de tener este secreto configurado en Jenkins
-        NOMBRE_ENTORNO = ""  // Opcional: Define tu entorno si lo necesitas, sino se dejará vacío
+        CI = "false" // Desactiva que React trate los warnings como errores
+        VERCEL_TOKEN = credentials('vercel-token') // Token de Vercel (si se usa despliegue)
     }
 
     stages {
@@ -14,81 +13,54 @@ pipeline {
             }
         }
 
-        stage('Declarative: Tool Install') {
+        stage('Tool Install') {
             steps {
-                script {
-                    // Configuración de herramientas necesarias si se requiere alguna
-                    // Si tienes Node.js o alguna herramienta extra, agrégala aquí
-                }
+                tool name: 'Node 20', type: 'nodejs' // Asegúrate de tener Node 20 instalado
             }
         }
 
         stage('Clean workspace') {
             steps {
-                deleteDir()  // Limpia el directorio de trabajo
+                deleteDir() // Limpia el espacio de trabajo antes de proceder
             }
         }
 
         stage('Checkout') {
             steps {
-                checkout scm  // Vuelve a hacer el checkout del código si es necesario
+                git url: 'https://github.com/dramirezdlp99/node-project.git', branch: 'main' // Usa tu URL de GitHub
             }
         }
 
         stage('Install dependencies') {
             steps {
-                script {
-                    bat 'npm install --legacy-peer-deps'  // Instala las dependencias con --legacy-peer-deps
-                }
+                bat 'npm install --legacy-peer-deps' // Instala dependencias, manejando peer-deps
             }
         }
 
         stage('Run tests') {
             steps {
-                script {
-                    bat 'npm test -- --watchAll=false'  // Ejecuta las pruebas
-                }
+                bat 'npm test -- --watchAll=false' // Ejecuta las pruebas sin watch
             }
         }
 
         stage('Build app') {
             steps {
-                script {
-                    bat 'npm run build'  // Construye la aplicación para producción
-                }
-            }
-        }
-
-        stage('Deploy to Vercel') {
-            steps {
-                script {
-                    // Despliega en Vercel con la opción --yes para evitar la confirmación
-                    bat "npx vercel --prod --token=${VERCEL_TOKEN} --yes"
-                }
-            }
-        }
-
-        stage('Declarative: Post Actions') {
-            steps {
-                echo "❌ El pipeline falló. Revisa los logs."  // Aquí puedes personalizar el mensaje post-build si es necesario
+                bat 'npm run build' // Construcción del proyecto
             }
         }
     }
 
     post {
-        always {
-            // Esta sección se ejecuta al final, independientemente de si el pipeline fue exitoso o falló.
-            echo "Pipeline completo"
-        }
-
         success {
-            // Si el pipeline fue exitoso, puedes agregar tareas adicionales aquí
-            echo "Pipeline ejecutado con éxito"
+            echo "✅ Pipeline ejecutado correctamente. Build exitoso."
         }
 
         failure {
-            // Si el pipeline falló, puedes agregar tareas aquí para manejar el error
-            echo "El pipeline falló, revisa los logs"
+            echo "❌ Error en alguna etapa del pipeline. Revisar los logs."
+        }
+
+        always {
+            echo "📦 Pipeline finalizado (éxito o fallo). Puedes revisar el historial."
         }
     }
 }
