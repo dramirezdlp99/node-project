@@ -1,50 +1,61 @@
 pipeline {
   agent any
+
   environment {
-    CI = "false" // Desactiva que React trate los warnings como errores
-    VERCEL_TOKEN = credentials('vercel-token')
+    CI = "false" // Para que React no trate los warnings como errores
+    VERCEL_TOKEN = credentials('vercel-token') // Asegúrate que esta credencial exista en Jenkins
   }
+
+  tools {
+    nodejs 'Node 20' // Usa el nombre exacto como lo configuraste en Jenkins
+  }
+
   stages {
-    stage('Declarative: Checkout SCM') {
-      steps {
-        checkout scm
-      }
-    }
-    stage('Tool Install') {
-      steps {
-        tool name: 'Node 20', type: 'nodejs'
-      }
-    }
+
     stage('Clean workspace') {
       steps {
         deleteDir()
       }
     }
+
     stage('Checkout') {
       steps {
-        git url: 'https://github.com/guswill24/node-project.git', branch: 'main'
+        git url: 'https://github.com/dramirezdlp99/node-project.git', branch: 'main'
       }
     }
+
     stage('Install dependencies') {
       steps {
         bat 'npm install --legacy-peer-deps'
       }
     }
+
     stage('Run tests') {
       steps {
         bat 'npm test -- --watchAll=false'
       }
     }
+
     stage('Build app') {
       steps {
         bat 'npm run build'
       }
     }
-    // 👇 Aquí viene el stage que te faltaba
+
     stage('Deploy to Vercel') {
       steps {
         bat "npx vercel --prod --token=%VERCEL_TOKEN%"
       }
     }
   }
+
+  post {
+    success {
+      echo '✅ El pipeline se ejecutó correctamente.'
+    }
+    failure {
+      echo '❌ El pipeline falló. Revisa los logs.'
+    }
+  }
 }
+
